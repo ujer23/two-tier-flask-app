@@ -1,48 +1,51 @@
-version: "3.8"
-
 services:
   mysql:
     image: mysql:5.7
     container_name: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: devops
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: twsdb
     volumes:
-      - ./mysql-data:/var/lib/mysql
-      - ./message.sql:/docker-entrypoint-initdb.d/message.sql
+      - mysql_data_new:/var/lib/mysql
     networks:
       - twotier
+
+    ports:
+      - "3306:3306"
+
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost","-uroot","-padmin"] 
+      interval: 5s 
+      retries: 5  
+      timeout: 3s
       start_period: 60s
 
   flask-app:
-    image: demo-jen:latest
+    build:
+      context: .
     container_name: flask-app
-    ports:
-      - "5000:5000"
     environment:
       MYSQL_HOST: mysql
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
-      MYSQL_DB: devops
-    depends_on:
-      mysql:
-        condition: service_healthy
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+      MYSQL_DB: twsdb
+
     networks:
       - twotier
-    restart: always
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+    ports:
+      - "5000:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy 
+
+
 
 networks:
   twotier:
+
+volumes:
+  mysql_data_new:  
+      
+
